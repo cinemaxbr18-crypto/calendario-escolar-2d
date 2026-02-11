@@ -10,11 +10,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Horário">
-    
-    <!-- Link para Manifesto (Necessário para o PWA funcionar de verdade) -->
-    <!-- Nota: Em um servidor real, você precisará de um arquivo manifest.json. 
-         Aqui simulei a lógica do botão, mas o prompt nativo do Android só aparece com o manifesto. -->
-    <link rel="manifest" href="manifest.json" />
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +21,7 @@
     <!-- Babel para JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Ícones Lucide (Opcional, mas ajuda nos ícones novos) -->
+    <!-- Ícones Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -39,7 +34,6 @@
         .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
         .animate-scaleIn { animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         
-        /* Efeito de blob no header */
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
@@ -49,7 +43,6 @@
         .animate-blob { animation: blob 7s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
 
-        /* Animação do Botão de Instalar */
         @keyframes bounce-gentle {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
@@ -62,6 +55,38 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        // --- MANIFESTO EMBUTIDO (Data URI) ---
+        // Isso ajuda o Android a reconhecer o app sem precisar de um arquivo manifest.json separado
+        const manifestData = {
+            "name": "Horário Escolar",
+            "short_name": "Horário",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#2563eb",
+            "icons": [
+                {
+                    "src": "https://placehold.co/192x192/2563eb/ffffff?text=H",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://placehold.co/512x512/2563eb/ffffff?text=H",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        
+        // Injeta o link do manifesto dinamicamente
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestURL;
+        document.head.appendChild(link);
+
 
         // --- 1. CONFIGURAÇÃO DE HORÁRIOS (TIME SLOTS) ---
         const TIME_SLOTS_CONFIG = {
@@ -483,13 +508,14 @@
         const XIcon = (p) => <IconBase {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
         const Download = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconBase>;
         const ShareIcon = (p) => <IconBase {...p}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></IconBase>;
+        const MoreVertical = (p) => <IconBase {...p}><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></IconBase>;
 
         // --- COMPONENTE: BOTÃO DE INSTALAÇÃO PWA ---
         function InstallPWA() {
             const [deferredPrompt, setDeferredPrompt] = useState(null);
             const [isInstalled, setIsInstalled] = useState(false);
             const [isIOS, setIsIOS] = useState(false);
-            const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+            const [showInstructions, setShowInstructions] = useState(false); // Genérico para iOS e Android
 
             useEffect(() => {
                 // 1. Verifica se já está instalado (Modo Standalone)
@@ -519,9 +545,8 @@
             }, []);
 
             const handleInstallClick = () => {
-                if (isIOS) {
-                    setShowIOSInstructions(true);
-                } else if (deferredPrompt) {
+                // Se tivermos o evento automático (Chrome/Desktop/Alguns Androids)
+                if (deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then((choiceResult) => {
                         if (choiceResult.outcome === 'accepted') {
@@ -529,20 +554,17 @@
                         }
                     });
                 } else {
-                    // Fallback caso o navegador não suporte o evento mas também não seja iOS
-                    alert("Para instalar, use a opção 'Adicionar à Tela Inicial' no menu do seu navegador.");
+                    // Se NÃO tiver o evento (iOS ou Android sem manifesto externo) -> Mostrar instruções
+                    setShowInstructions(true);
                 }
             };
 
             // Se já estiver instalado, não renderiza nada
             if (isInstalled) return null;
 
-            // Só mostra o botão se tivermos o evento capturado (Android/PC) OU se for iOS
-            if (!deferredPrompt && !isIOS) return null;
-
             return (
                 <>
-                    {/* Botão Flutuante */}
+                    {/* Botão Flutuante (Aparece SEMPRE se não estiver instalado) */}
                     <button 
                         onClick={handleInstallClick}
                         className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-400/50 z-40 hover:bg-blue-700 transition-transform active:scale-95 animate-bounce-gentle flex items-center gap-2 font-bold pr-6"
@@ -551,27 +573,48 @@
                         <span className="text-sm">Baixar App</span>
                     </button>
 
-                    {/* Modal de Instruções iOS */}
-                    {showIOSInstructions && (
+                    {/* Modal de Instruções (Funciona para iOS e Android) */}
+                    {showInstructions && (
                         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 animate-fadeIn">
-                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSInstructions(false)}></div>
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowInstructions(false)}></div>
                             <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden animate-scaleIn p-6 pb-10 sm:pb-6">
                                 <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-bold text-lg text-slate-800">Instalar no iPhone</h3>
-                                    <button onClick={() => setShowIOSInstructions(false)}><XIcon className="w-6 h-6 text-slate-400" /></button>
+                                    <h3 className="font-bold text-lg text-slate-800">
+                                        {isIOS ? 'Instalar no iPhone' : 'Instalar no Android'}
+                                    </h3>
+                                    <button onClick={() => setShowInstructions(false)}><XIcon className="w-6 h-6 text-slate-400" /></button>
                                 </div>
+                                
                                 <div className="space-y-4 text-slate-600 text-sm">
-                                    <p>Para instalar este aplicativo no seu iPhone, siga os passos abaixo:</p>
-                                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                        <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><ShareIcon className="w-5 h-5 text-blue-500" /></div>
-                                        <span>1. Toque no botão <strong>Compartilhar</strong> na barra inferior do Safari.</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                        <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><span className="text-xl leading-none">⊞</span></div>
-                                        <span>2. Role para cima e toque em <strong>Adicionar à Tela de Início</strong>.</span>
-                                    </div>
+                                    <p>Para instalar este aplicativo no seu dispositivo, siga os passos:</p>
+                                    
+                                    {isIOS ? (
+                                        // Instruções iOS
+                                        <>
+                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><ShareIcon className="w-5 h-5 text-blue-500" /></div>
+                                                <span>1. Toque no botão <strong>Compartilhar</strong> na barra inferior.</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><span className="text-xl leading-none">⊞</span></div>
+                                                <span>2. Role e toque em <strong>Adicionar à Tela de Início</strong>.</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        // Instruções Android (Genérico)
+                                        <>
+                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><MoreVertical className="w-5 h-5 text-slate-500" /></div>
+                                                <span>1. Toque nos <strong>3 pontinhos</strong> no canto superior do navegador.</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><Download className="w-5 h-5 text-blue-500" /></div>
+                                                <span>2. Toque em <strong>Instalar aplicativo</strong> ou <strong>Adicionar à tela inicial</strong>.</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                <button onClick={() => setShowIOSInstructions(false)} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Entendi</button>
+                                <button onClick={() => setShowInstructions(false)} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Entendi</button>
                             </div>
                         </div>
                     )}
