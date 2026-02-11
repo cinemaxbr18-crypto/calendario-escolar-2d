@@ -10,6 +10,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Horário">
+    
+    <!-- Link para Manifesto (Necessário para o PWA funcionar de verdade) -->
+    <!-- Nota: Em um servidor real, você precisará de um arquivo manifest.json. 
+         Aqui simulei a lógica do botão, mas o prompt nativo do Android só aparece com o manifesto. -->
+    <link rel="manifest" href="manifest.json" />
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,6 +25,9 @@
     
     <!-- Babel para JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Ícones Lucide (Opcional, mas ajuda nos ícones novos) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -40,6 +48,13 @@
         }
         .animate-blob { animation: blob 7s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
+
+        /* Animação do Botão de Instalar */
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-gentle { animation: bounce-gentle 2s infinite; }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -59,7 +74,6 @@
                 T5: "16h25 - 17h10"
             },
             manha: {
-                // Configuração placeholder para manhã (caso precise no futuro)
                 T1: "07h00 - 07h50",
                 T2: "07h50 - 08h40",
                 T3: "08h40 - 09h25",
@@ -78,9 +92,8 @@
                 { id: 'manha', label: 'Manhã' },
                 { id: 'tarde', label: 'Tarde' }
             ],
-            // Define quais turmas pertencem a qual turno
             classesByShift: {
-                manha: [], // Vazio conforme solicitado
+                manha: [],
                 tarde: [
                     { id: '1D', label: '1ª Série D' },
                     { id: '1E', label: '1ª Série E' },
@@ -100,12 +113,12 @@
             mat: 'bg-blue-100 text-blue-800 border-blue-200',
             ef: 'bg-green-100 text-green-800 border-green-200',
             arte: 'bg-pink-100 text-pink-800 border-pink-200',
-            ifa: 'bg-indigo-100 text-indigo-800 border-indigo-200', // Usado para Itinerários/Eletivas
+            ifa: 'bg-indigo-100 text-indigo-800 border-indigo-200',
             fis: 'bg-red-100 text-red-800 border-red-200',
             hist: 'bg-orange-100 text-orange-800 border-orange-200',
             bio: 'bg-emerald-100 text-emerald-800 border-emerald-200',
             red: 'bg-rose-100 text-rose-800 border-rose-200',
-            fc: 'bg-yellow-100 text-yellow-800 border-yellow-200', // Formação Cidadã
+            fc: 'bg-yellow-100 text-yellow-800 border-yellow-200',
             esp: 'bg-red-50 text-red-700 border-red-200',
             lp: 'bg-teal-100 text-teal-800 border-teal-200',
             ing: 'bg-sky-100 text-sky-800 border-sky-200',
@@ -114,7 +127,7 @@
             geo: 'bg-lime-100 text-lime-800 border-lime-200'
         };
 
-        // --- 3. CRONOGRAMA DE AULAS COMPLETO (Baseado na Imagem) ---
+        // --- 3. CRONOGRAMA DE AULAS COMPLETO ---
         const SCHEDULE_DB = {
             'tarde': {
                 '1D': {
@@ -156,7 +169,7 @@
                         { type: 'l', tc: 'T3', sub: 'Biologia', tea: 'Edney', col: COLORS.bio },
                         { type: 'b', tc: 'INT', label: 'Intervalo' },
                         { type: 'l', tc: 'T4', sub: 'Matemática', tea: 'Airan/Anglaine', col: COLORS.mat },
-                        { type: 'l', tc: 'T5', sub: '---', tea: '---', col: COLORS.ifa } // Ajuste se necessário para o 6 tempo
+                        { type: 'l', tc: 'T5', sub: '---', tea: '---', col: COLORS.ifa } 
                     ]
                 },
                 '1E': {
@@ -468,6 +481,103 @@
         const ImagePlus = (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></IconBase>;
         const ChevronRight = (p) => <IconBase {...p}><path d="m9 18 6-6-6-6"/></IconBase>;
         const XIcon = (p) => <IconBase {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+        const Download = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconBase>;
+        const ShareIcon = (p) => <IconBase {...p}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></IconBase>;
+
+        // --- COMPONENTE: BOTÃO DE INSTALAÇÃO PWA ---
+        function InstallPWA() {
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
+            const [isInstalled, setIsInstalled] = useState(false);
+            const [isIOS, setIsIOS] = useState(false);
+            const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+
+            useEffect(() => {
+                // 1. Verifica se já está instalado (Modo Standalone)
+                const checkStandalone = () => {
+                    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                        setIsInstalled(true);
+                    }
+                };
+                checkStandalone();
+                window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
+
+                // 2. Detecta se é iOS (para mostrar instruções manuais)
+                const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                setIsIOS(isIosDevice);
+
+                // 3. Captura o evento de instalação (Chrome/Android/Desktop)
+                const handleBeforeInstallPrompt = (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                };
+
+                window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+                return () => {
+                    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+                };
+            }, []);
+
+            const handleInstallClick = () => {
+                if (isIOS) {
+                    setShowIOSInstructions(true);
+                } else if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            setDeferredPrompt(null);
+                        }
+                    });
+                } else {
+                    // Fallback caso o navegador não suporte o evento mas também não seja iOS
+                    alert("Para instalar, use a opção 'Adicionar à Tela Inicial' no menu do seu navegador.");
+                }
+            };
+
+            // Se já estiver instalado, não renderiza nada
+            if (isInstalled) return null;
+
+            // Só mostra o botão se tivermos o evento capturado (Android/PC) OU se for iOS
+            if (!deferredPrompt && !isIOS) return null;
+
+            return (
+                <>
+                    {/* Botão Flutuante */}
+                    <button 
+                        onClick={handleInstallClick}
+                        className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-400/50 z-40 hover:bg-blue-700 transition-transform active:scale-95 animate-bounce-gentle flex items-center gap-2 font-bold pr-6"
+                    >
+                        <Download className="w-6 h-6" />
+                        <span className="text-sm">Baixar App</span>
+                    </button>
+
+                    {/* Modal de Instruções iOS */}
+                    {showIOSInstructions && (
+                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 animate-fadeIn">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSInstructions(false)}></div>
+                            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden animate-scaleIn p-6 pb-10 sm:pb-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="font-bold text-lg text-slate-800">Instalar no iPhone</h3>
+                                    <button onClick={() => setShowIOSInstructions(false)}><XIcon className="w-6 h-6 text-slate-400" /></button>
+                                </div>
+                                <div className="space-y-4 text-slate-600 text-sm">
+                                    <p>Para instalar este aplicativo no seu iPhone, siga os passos abaixo:</p>
+                                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><ShareIcon className="w-5 h-5 text-blue-500" /></div>
+                                        <span>1. Toque no botão <strong>Compartilhar</strong> na barra inferior do Safari.</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><span className="text-xl leading-none">⊞</span></div>
+                                        <span>2. Role para cima e toque em <strong>Adicionar à Tela de Início</strong>.</span>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowIOSInstructions(false)} className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Entendi</button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        }
 
         // --- COMPONENTE: MODAL DO LIVRO ---
         function BookModal({ isOpen, onClose, subject }) {
@@ -613,12 +723,16 @@
             };
 
             const resetPreferences = () => {
-                // Removemos o confirm para simplificar a troca, já que o usuário pediu "só a opção de escolher novamente"
                 localStorage.removeItem('schoolAppPrefs_v2');
                 setPreferences(null);
             };
 
-            if (!preferences) return <SetupScreen onComplete={savePreferences} />;
+            if (!preferences) return (
+                <>
+                    <SetupScreen onComplete={savePreferences} />
+                    <InstallPWA /> {/* Botão de Instalar também na tela de Setup */}
+                </>
+            );
 
             // Helper para encontrar label da turma
             const getClassName = () => {
@@ -755,18 +869,21 @@
                             </div>
                         )}
 
-{/* Footer Note */}
-<footer className="mt-8 pb-10 px-6 text-center">
-    <p className="text-xs text-slate-500 leading-relaxed">
-        Este site é um projeto estudantil independente.
-    </p>
-    <p className="text-xs text-slate-400 leading-relaxed mt-1">
-        Os horários são baseados no mural físico da escola. <br />
-        Sempre confira as informações oficiais no portal <strong><a href="https://aluno.seduc.ce.gov.br/">Aluno Online</a></strong> assim que disponíveis.
-    </p>
-</footer>
+                        {/* Footer Note */}
+                        <footer className="mt-8 pb-10 px-6 text-center">
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Este site é um projeto estudantil independente.
+                            </p>
+                            <p className="text-xs text-slate-400 leading-relaxed mt-1">
+                                Os horários são baseados no mural físico da escola. <br />
+                                Sempre confira as informações oficiais no portal <strong><a href="https://aluno.seduc.ce.gov.br/">Aluno Online</a></strong> assim que disponíveis.
+                            </p>
+                        </footer>
                         
                     </main>
+
+                    {/* Componente de Instalação PWA */}
+                    <InstallPWA />
 
                     {/* Modal do Livro */}
                     <BookModal 
