@@ -49,24 +49,12 @@
         }
         .animate-bounce-gentle { animation: bounce-gentle 2s infinite; }
 
- // --- 0. DICIONÁRIO DE IMAGENS DOS LIVROS ---
-        // COLOQUE OS LINKS DAS IMAGENS AQUI (Ex: Imgur, Pinterest ou link direto)
-        const BOOK_IMAGES = {
-            "Matemática": "https://images-na.ssl-images-amazon.com/images/I/81W8LzYyH0L.jpg",
-            "Líng. Port.": "https://m.media-amazon.com/images/I/71u9B4D9sTL._AC_UF1000,1000_QL80_.jpg",
-            "Biologia": "", // Se deixar vazio, ele usa o placeholder cinza
-            "Física": "",
-            "Química": "",
-            "História": "",
-            "Geografia": "",
-            "Inglês": "",
-            "Espanhol": "",
-            "Filosofia": "",
-            "Sociologia": "",
-            "Arte": "",
-            "Redação": ""
-        };
-        
+        /* --- 0. DICIONÁRIO DE IMAGENS DOS LIVROS --- */
+        /* Instruções de Uso:
+           1. Coloque o link direto da imagem (jpg, png, webp, etc).
+           2. Para imagem GERAL (todas as turmas): Use apenas o nome da matéria. Ex: "Matemática"
+           3. Para imagem ESPECÍFICA (só uma turma): Use "ID_DA_TURMA-Matéria". Ex: "2D-Redação"
+        */
     </style>
 </head>
 <body class="bg-slate-50">
@@ -75,8 +63,32 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // --- CONFIGURAÇÃO DE IMAGENS ---
+        const BOOK_IMAGES = {
+            // === IMAGENS GERAIS (Padrão para todas as turmas) ===
+            "Matemática": "https://images-na.ssl-images-amazon.com/images/I/81W8LzYyH0L.jpg",
+            "Líng. Port.": "https://m.media-amazon.com/images/I/71u9B4D9sTL._AC_UF1000,1000_QL80_.jpg",
+            "Física": "https://m.media-amazon.com/images/I/91+t0Di0bdL.jpg",
+            
+            // === IMAGENS ESPECÍFICAS (Substituem a geral na turma indicada) ===
+            // Formato: "TURMA-MATÉRIA": "LINK"
+            "2D-Redação": "https://m.media-amazon.com/images/I/61r-Cj4qZPL._AC_UF1000,1000_QL80_.jpg", // Exemplo: Redação específica do 2D
+            "3F-Física": "https://m.media-amazon.com/images/I/81N6-T2SyuL._AC_UF1000,1000_QL80_.jpg",  // Exemplo: Física específica do 3F
+
+            // Outras matérias (vazias usarão placeholder automático)
+            "Biologia": "", 
+            "Química": "",
+            "História": "",
+            "Geografia": "",
+            "Inglês": "",
+            "Espanhol": "",
+            "Filosofia": "",
+            "Sociologia": "",
+            "Arte": "",
+            "Redação": "" // Redação geral (será usada por quem não for 2D, por exemplo)
+        };
+
         // --- MANIFESTO EMBUTIDO (Data URI) ---
-        // Isso ajuda o Android a reconhecer o app sem precisar de um arquivo manifest.json separado
         const manifestData = {
             "name": "Horário Escolar",
             "short_name": "Horário",
@@ -100,7 +112,6 @@
         const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
         const manifestURL = URL.createObjectURL(manifestBlob);
         
-        // Injeta o link do manifesto dinamicamente
         const link = document.createElement('link');
         link.rel = 'manifest';
         link.href = manifestURL;
@@ -534,10 +545,9 @@
             const [deferredPrompt, setDeferredPrompt] = useState(null);
             const [isInstalled, setIsInstalled] = useState(false);
             const [isIOS, setIsIOS] = useState(false);
-            const [showInstructions, setShowInstructions] = useState(false); // Genérico para iOS e Android
+            const [showInstructions, setShowInstructions] = useState(false);
 
             useEffect(() => {
-                // 1. Verifica se já está instalado (Modo Standalone)
                 const checkStandalone = () => {
                     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
                         setIsInstalled(true);
@@ -546,11 +556,9 @@
                 checkStandalone();
                 window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
 
-                // 2. Detecta se é iOS (para mostrar instruções manuais)
                 const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 setIsIOS(isIosDevice);
 
-                // 3. Captura o evento de instalação (Chrome/Android/Desktop)
                 const handleBeforeInstallPrompt = (e) => {
                     e.preventDefault();
                     setDeferredPrompt(e);
@@ -564,7 +572,6 @@
             }, []);
 
             const handleInstallClick = () => {
-                // Se tivermos o evento automático (Chrome/Desktop/Alguns Androids)
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then((choiceResult) => {
@@ -573,17 +580,14 @@
                         }
                     });
                 } else {
-                    // Se NÃO tiver o evento (iOS ou Android sem manifesto externo) -> Mostrar instruções
                     setShowInstructions(true);
                 }
             };
 
-            // Se já estiver instalado, não renderiza nada
             if (isInstalled) return null;
 
             return (
                 <>
-                    {/* Botão Flutuante (Aparece SEMPRE se não estiver instalado) */}
                     <button 
                         onClick={handleInstallClick}
                         className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-400/50 z-40 hover:bg-blue-700 transition-transform active:scale-95 animate-bounce-gentle flex items-center gap-2 font-bold pr-6"
@@ -592,7 +596,6 @@
                         <span className="text-sm">Baixar App</span>
                     </button>
 
-                    {/* Modal de Instruções (Funciona para iOS e Android) */}
                     {showInstructions && (
                         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 animate-fadeIn">
                             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowInstructions(false)}></div>
@@ -608,7 +611,6 @@
                                     <p>Para instalar este aplicativo no seu dispositivo, siga os passos:</p>
                                     
                                     {isIOS ? (
-                                        // Instruções iOS
                                         <>
                                             <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
                                                 <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><ShareIcon className="w-5 h-5 text-blue-500" /></div>
@@ -620,7 +622,6 @@
                                             </div>
                                         </>
                                     ) : (
-                                        // Instruções Android (Genérico)
                                         <>
                                             <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
                                                 <div className="bg-white p-2 rounded-md shadow-sm border border-slate-200"><MoreVertical className="w-5 h-5 text-slate-500" /></div>
@@ -641,11 +642,18 @@
             );
         }
 
-        // --- COMPONENTE: MODAL DO LIVRO ---
-        function BookModal({ isOpen, onClose, subject }) {
+        // --- COMPONENTE: MODAL DO LIVRO (Atualizado para lógica específica) ---
+        function BookModal({ isOpen, onClose, subject, classId }) {
             if (!isOpen) return null;
             
-            const bookImageUrl = `https://placehold.co/400x600/e2e8f0/1e293b?text=Livro+de+${encodeURIComponent(subject)}`;
+            // 1. Tenta achar imagem específica da turma (Ex: "2D-Redação")
+            const specificKey = classId ? `${classId}-${subject}` : null;
+            
+            // 2. Busca no dicionário (Primeiro a específica, depois a geral)
+            const imageSrc = (specificKey && BOOK_IMAGES[specificKey]) || BOOK_IMAGES[subject];
+            
+            // 3. Fallback se não tiver nada
+            const finalImage = imageSrc ? imageSrc : `https://placehold.co/400x600/e2e8f0/1e293b?text=Livro+de+${encodeURIComponent(subject)}`;
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
@@ -662,9 +670,16 @@
                         </div>
                         <div className="p-6 flex flex-col items-center">
                             <div className="aspect-[2/3] w-48 bg-slate-200 rounded-lg shadow-md mb-4 overflow-hidden relative group">
-                                <img src={bookImageUrl} alt={`Livro de ${subject}`} className="w-full h-full object-cover" />
+                                <img src={finalImage} alt={`Livro de ${subject}`} className="w-full h-full object-cover" />
                             </div>
-                            <p className="text-center font-medium text-slate-700">{subject}</p>
+                            <div className="text-center">
+                                <p className="font-medium text-slate-700">{subject}</p>
+                                {specificKey && BOOK_IMAGES[specificKey] && (
+                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold mt-1 inline-block">
+                                        Específico da {classId}
+                                    </span>
+                                )}
+                            </div>
                             <button onClick={onClose} className="mt-4 w-full bg-slate-100 py-2 rounded-lg text-slate-600 font-medium">Fechar</button>
                         </div>
                     </div>
@@ -678,7 +693,6 @@
             const [shift, setShift] = useState('tarde'); // Padrão: Tarde
             const [classId, setClassId] = useState('');
 
-            // Atualiza o ID da classe se o turno mudar (limpa a seleção se a classe não existir no novo turno)
             useEffect(() => {
                 const classesForShift = SCHOOL_DATA.classesByShift[shift] || [];
                 const currentClassValid = classesForShift.find(c => c.id === classId);
@@ -708,7 +722,6 @@
                     </div>
 
                     <div className="space-y-5 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        {/* Seleção de Escola */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Escola</label>
                             <select 
@@ -720,7 +733,6 @@
                             </select>
                         </div>
 
-                        {/* Seleção de Turno */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Turno</label>
                             <div className="grid grid-cols-2 gap-3">
@@ -736,7 +748,6 @@
                             </div>
                         </div>
 
-                        {/* Seleção de Turma */}
                         <div className={`transition-all duration-300 ${!shift ? 'opacity-50 pointer-events-none' : ''}`}>
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Turma</label>
                             <select 
@@ -769,7 +780,6 @@
             const [activeDay, setActiveDay] = useState('segunda');
             const [modalBook, setModalBook] = useState(null);
 
-            // Carregar/Salvar Preferências
             useEffect(() => {
                 const saved = localStorage.getItem('schoolAppPrefs_v2');
                 if (saved) setPreferences(JSON.parse(saved));
@@ -792,11 +802,10 @@
             if (!preferences) return (
                 <>
                     <SetupScreen onComplete={savePreferences} />
-                    <InstallPWA /> {/* Botão de Instalar também na tela de Setup */}
+                    <InstallPWA />
                 </>
             );
 
-            // Helper para encontrar label da turma
             const getClassName = () => {
                 const allClasses = [...SCHOOL_DATA.classesByShift.manha, ...SCHOOL_DATA.classesByShift.tarde];
                 const cls = allClasses.find(c => c.id === preferences.classId);
@@ -805,7 +814,6 @@
 
             const currentTimes = TIME_SLOTS_CONFIG[preferences.shift] || TIME_SLOTS_CONFIG['tarde'];
             
-            // Busca dados
             const daySchedule = SCHEDULE_DB[preferences.shift]?.[preferences.classId]?.[activeDay] || [];
             const hasData = daySchedule.length > 0;
 
@@ -817,7 +825,6 @@
 
             return (
                 <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-10 select-none">
-                    {/* Header */}
                     <header className="bg-blue-600 text-white p-6 shadow-lg rounded-b-[2.5rem] mb-6 relative overflow-hidden transition-all">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
                         <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
@@ -844,7 +851,6 @@
                     </header>
 
                     <main className="max-w-md mx-auto px-4">
-                        {/* Navegação Dias */}
                         <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar mb-2">
                             {days.map((day) => (
                                 <button
@@ -861,7 +867,6 @@
                             ))}
                         </div>
 
-                        {/* Conteúdo */}
                         {!hasData ? (
                             <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-300 shadow-sm mx-2 mt-4">
                                 <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
@@ -875,7 +880,6 @@
                         ) : (
                             <div className="space-y-3 pb-10">
                                 {daySchedule.map((item, index) => {
-                                    // Renderização do Intervalo
                                     if (item.type === 'b') {
                                         return (
                                             <div key={index} className="flex items-center gap-4 py-3 px-2">
@@ -889,7 +893,6 @@
                                         );
                                     }
 
-                                    // Renderização de Aula Normal
                                     return (
                                         <div 
                                             key={index}
@@ -917,7 +920,7 @@
                                                     </div>
 
                                                     <button 
-                                                        onClick={() => setModalBook({ isOpen: true, subject: item.sub })}
+                                                        onClick={() => setModalBook({ isOpen: true, subject: item.sub, classId: preferences.classId })}
                                                         className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors active:scale-95"
                                                         aria-label="Ver Livro"
                                                     >
@@ -931,7 +934,6 @@
                             </div>
                         )}
 
-                        {/* Footer Note */}
                         <footer className="mt-8 pb-10 px-6 text-center">
                             <p className="text-xs text-slate-500 leading-relaxed">
                                 Este site é um projeto estudantil independente.
@@ -944,13 +946,12 @@
                         
                     </main>
 
-                    {/* Componente de Instalação PWA */}
                     <InstallPWA />
 
-                    {/* Modal do Livro */}
                     <BookModal 
                         isOpen={modalBook?.isOpen} 
                         subject={modalBook?.subject} 
+                        classId={modalBook?.classId}
                         onClose={() => setModalBook(null)} 
                     />
                 </div>
