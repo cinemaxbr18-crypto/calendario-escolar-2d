@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aviso Crítico - Migração de Domínio</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Ícones Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Animações Suaves de Entrada (Sem mexer a tela depois) */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bgRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-fade-in {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Efeito de pulso no ícone sem mover o layout */
+        .pulse-soft {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            animation: pulse-red 2s infinite;
+            border-radius: 9999px;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Fundos Dinâmicos */
+        .bg-glow-blue {
+            position: fixed;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+            top: -200px;
+            left: -200px;
+            z-index: -1;
+            animation: bgRotate 30s linear infinite;
+        }
+
+        .bg-glow-red {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.06) 0%, rgba(0, 0, 0, 0) 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+            animation: bgRotate 20s linear infinite reverse;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <!-- Efeitos de Fundo Estáticos -->
+    <div class="bg-glow-blue"></div>
+    <div class="bg-glow-red"></div>
+
+    <main class="relative z-10 w-full max-w-lg">
+        
+        <!-- Cabeçalho -->
+        <div class="text-center mb-10 animate-fade-in">
+            <div class="inline-flex items-center justify-center w-20 h-20 mb-6 bg-red-500/10 pulse-soft">
+                <i data-lucide="shield-off" class="w-10 h-10 text-red-500"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
+                DOMÍNIO <span class="text-red-500 uppercase">DESATIVADO</span>
+            </h1>
+            <p class="text-slate-400 font-medium">
+                Este endereço não recebe mais atualizações. <br> O projeto foi movido para um novo local.
+            </p>
+        </div>
+
+        <!-- Card Principal -->
+        <div class="glass-card rounded-[2.5rem] p-8 md:p-10 animate-fade-in delay-100 shadow-2xl">
+            
+            <div class="space-y-4 mb-8">
+                <!-- Info Migração -->
+                <div class="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="mt-1 text-blue-400">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-sm uppercase tracking-wide">Nova Plataforma</h3>
+                        <p class="text-slate-400 text-xs">Acesse o novo domínio para ter os dados sincronizados e corretos.</p>
+                    </div>
+                </div>
+
+                <!-- Alerta Desinstalação -->
+                <div class="flex items-start gap-4 p-5 rounded-2xl bg-red-500/5 border border-red-500/20">
+                    <div class="mt-1 text-red-400">
+                        <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-red-400 text-sm uppercase tracking-wide">Atenção ao App</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed">
+                            Se você baixou o app ou salvou na tela inicial através deste link: <strong>DESINSTALE AGORA</strong>. Versões baixadas aqui mostrarão dados errados.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="space-y-3">
+                <!-- Botão Principal -->
+                <a href="https://seu-novo-site.com" 
+                   class="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 px-8 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95">
+                    <i data-lucide="external-link" class="w-5 h-5"></i>
+                    IR PARA NOVO DOMÍNIO
+                </a>
+
+                <!-- Opção de Continuar -->
+                <button onclick="window.location.href='index.html'" 
+                   class="w-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all border border-white/5">
+                    Ignorar e acessar site antigo
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <p class="mt-6 text-[10px] text-center text-slate-500 font-medium leading-relaxed italic">
+                Nota: Este é um projeto independente. <br> O uso do site antigo é por sua conta e risco.
+            </p>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="mt-8 text-center animate-fade-in delay-200">
+            <div class="inline-flex flex-col items-center gap-2 opacity-60">
+                <span class="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500">Projeto Independente 2026</span>
+                <p class="text-[9px] text-slate-600 uppercase font-black">Desenvolvimento Autônomo</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Inicialização dos ícones
+        lucide.createIcons();
+    </script>
+</body>
+</html>
